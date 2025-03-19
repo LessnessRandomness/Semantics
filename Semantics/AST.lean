@@ -24,7 +24,6 @@ inductive BinaryOp: Type where
 | array_set
 
 inductive Literal: Type where
-| null
 | undefined
 | boolean: Bool → Literal
 | string: String → Literal
@@ -34,7 +33,7 @@ mutual
   inductive Expr: Type where
   | identifier: String → Expr
   | literal: Literal → Expr
-  | object: List (String × Expr) → Expr
+  | dictionary: List (String × Expr) → Expr
   | array: List Expr → Expr
   | function: List String → List Stat → Expr
   | fun_apply: Expr → List Expr → Expr
