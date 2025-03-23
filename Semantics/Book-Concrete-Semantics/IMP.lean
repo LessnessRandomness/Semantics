@@ -94,31 +94,52 @@ lemma L_7_4 (b: BExp) (c: Com):
     . apply BigStep.IfFalse <;> assumption
   . cases H <;> assumption
 
-
---- Don't know how to prove following theorems :(
-
+-- thanks to Henrik Böving for his hint with 'generalize'
 lemma L_7_5 (b: BExp) (c1 c2: Com) (Hc: equivalent_commands c1 c2):
     equivalent_commands (Com.While b c1) (Com.While b c2) := by
   intros s t; constructor <;> intro H
-  . cases H with
-    | WhileFalse s b c H0 =>
+  . generalize hfoo : (Com.While b c1) = foo at H
+    induction H with
+    | WhileFalse s' b' c H0 =>
+      simp at hfoo
+      obtain ⟨H1, H2⟩ := hfoo; subst H1 H2
       apply BigStep.WhileFalse
       assumption
-    | WhileTrue s1 s2 s3 b c H0 H1 H2 =>
-      sorry
-  . sorry
+    | WhileTrue s1 s2 s3 b' c H1 H2 H3 H4 H5 =>
+      simp at hfoo
+      obtain ⟨H1, H2⟩ := hfoo; subst H1 H2
+      apply BigStep.WhileTrue s1 s2 s3
+      . assumption
+      . simp at H5
+        rw [<- Hc]
+        exact H2
+      . simp at H5
+        exact H5
+    | _ => tauto
+  . generalize hfoo : (Com.While b c2) = foo at H
+    induction H with
+    | WhileFalse s' b' c H0 =>
+      simp at hfoo
+      obtain ⟨H1, H2⟩ := hfoo; subst H1 H2
+      apply BigStep.WhileFalse
+      assumption
+    | WhileTrue s1 s2 s3 b' c H1 H2 H3 H4 H5 =>
+      simp at hfoo
+      obtain ⟨H1, H2⟩ := hfoo; subst H1 H2
+      apply BigStep.WhileTrue
+      . assumption
+      . simp at H5
+        rw [Hc]
+        exact H2
+      . simp at H5
+        exact H5
+    | _ => tauto
 
-lemma L_7_6 (b: BExp) (c1 c2: Com) (s t: State):
-    BigStep s (Com.While b c1) t → equivalent_commands c1 c2 → BigStep s (Com.While b c2) t := by
-  intros H H0
-  obtain H1 | H1 := em (bval b s)
-  . cases H with
-    | WhileFalse s b c H2 =>
-      tauto
-    | WhileTrue s1 s2 s3 b c H2 H3 H4 =>
-      sorry
-  . cases H with
-    | WhileFalse s b c H2 =>
-      apply BigStep.WhileFalse; assumption
-    | WhileTrue s1 s2 s3 b c H2 H3 H4 =>
-      tauto
+lemma L_7_8: Equivalence equivalent_commands := by
+  unfold equivalent_commands
+  refine ⟨?_, ?_, ?_⟩
+  . tauto
+  . intros x y H s t
+    rw [H]
+  . intros x y z H H0 s t
+    rw [H, H0]
