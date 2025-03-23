@@ -107,14 +107,11 @@ lemma L_7_5 (b: BExp) (c1 c2: Com) (Hc: equivalent_commands c1 c2):
       assumption
     | WhileTrue s1 s2 s3 b' c H1 H2 H3 H4 H5 =>
       simp at hfoo
-      obtain ⟨H1, H2⟩ := hfoo; subst H1 H2
-      apply BigStep.WhileTrue s1 s2 s3
-      . assumption
-      . simp at H5
-        rw [<- Hc]
+      obtain ⟨H1, H2⟩ := hfoo; subst H1 H2; simp at H5
+      apply BigStep.WhileTrue s1 s2 s3 _ _ H1
+      . rw [<- Hc]
         exact H2
-      . simp at H5
-        exact H5
+      . exact H5
     | _ => tauto
   . generalize hfoo : (Com.While b c2) = foo at H
     induction H with
@@ -125,14 +122,11 @@ lemma L_7_5 (b: BExp) (c1 c2: Com) (Hc: equivalent_commands c1 c2):
       assumption
     | WhileTrue s1 s2 s3 b' c H1 H2 H3 H4 H5 =>
       simp at hfoo
-      obtain ⟨H1, H2⟩ := hfoo; subst H1 H2
-      apply BigStep.WhileTrue
-      . assumption
-      . simp at H5
-        rw [Hc]
+      obtain ⟨H1, H2⟩ := hfoo; subst H1 H2; simp at H5
+      apply BigStep.WhileTrue s1 s2 s3 _ _ H1
+      . rw [Hc]
         exact H2
-      . simp at H5
-        exact H5
+      . exact H5
     | _ => tauto
 
 lemma L_7_8: Equivalence equivalent_commands := by
