@@ -57,3 +57,31 @@ inductive BigStep: State → Com → State → Prop where
     (¬ bval b s) → BigStep s (Com.While b c) s
 | WhileTrue: ∀ (s1 s2 s3: State) (b: BExp) (c: Com),
     bval b s1 → BigStep s1 c s2 → BigStep s2 (Com.While b c) s3 → BigStep s1 (Com.While b c) s3
+
+def equivalent_commands (c1 c2: Com): Prop :=
+  ∀ (s t: State), BigStep s c1 t ↔ BigStep s c2 t
+
+lemma L_7_3 (b: BExp) (c: Com):
+  equivalent_commands
+    (Com.While b c)
+    (Com.If b (Com.Seq c (Com.While b c)) Com.SKIP) := by
+  intros s t; constructor <;> intros H
+  . cases H with
+    | WhileFalse s b c H =>
+      apply BigStep.IfFalse
+      . assumption
+      . apply BigStep.SKIP
+    | WhileTrue s1 s2 s3 b c H H0 H1 =>
+      apply BigStep.IfTrue
+      . assumption
+      . apply BigStep.Seq
+        . assumption
+        . assumption
+  . cases H with
+    | IfTrue s t b c1 c2 H H0 =>
+      cases H0 with
+      | Seq s1 s2 s3 c1 c2 H0 H1 =>
+        apply BigStep.WhileTrue <;> assumption
+    | IfFalse s t b c1 c2 H H0 =>
+      cases H0
+      apply BigStep.WhileFalse; assumption
