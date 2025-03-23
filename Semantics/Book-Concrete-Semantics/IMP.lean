@@ -85,3 +85,40 @@ lemma L_7_3 (b: BExp) (c: Com):
     | IfFalse s t b c1 c2 H H0 =>
       cases H0
       apply BigStep.WhileFalse; assumption
+
+lemma L_7_4 (b: BExp) (c: Com):
+    equivalent_commands c (Com.If b c c) := by
+  intros s t; constructor <;> intros H
+  . obtain H0 | H0 := em (bval b s)
+    . apply BigStep.IfTrue <;> assumption
+    . apply BigStep.IfFalse <;> assumption
+  . cases H <;> assumption
+
+
+--- Don't know how to prove following theorems :(
+
+lemma L_7_5 (b: BExp) (c1 c2: Com) (Hc: equivalent_commands c1 c2):
+    equivalent_commands (Com.While b c1) (Com.While b c2) := by
+  intros s t; constructor <;> intro H
+  . cases H with
+    | WhileFalse s b c H0 =>
+      apply BigStep.WhileFalse
+      assumption
+    | WhileTrue s1 s2 s3 b c H0 H1 H2 =>
+      sorry
+  . sorry
+
+lemma L_7_6 (b: BExp) (c1 c2: Com) (s t: State):
+    BigStep s (Com.While b c1) t → equivalent_commands c1 c2 → BigStep s (Com.While b c2) t := by
+  intros H H0
+  obtain H1 | H1 := em (bval b s)
+  . cases H with
+    | WhileFalse s b c H2 =>
+      tauto
+    | WhileTrue s1 s2 s3 b c H2 H3 H4 =>
+      sorry
+  . cases H with
+    | WhileFalse s b c H2 =>
+      apply BigStep.WhileFalse; assumption
+    | WhileTrue s1 s2 s3 b c H2 H3 H4 =>
+      tauto
