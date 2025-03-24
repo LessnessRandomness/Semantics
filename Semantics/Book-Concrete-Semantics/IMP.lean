@@ -94,7 +94,7 @@ lemma L_7_4 (b: BExp) (c: Com):
     . apply BigStep.IfFalse <;> assumption
   . cases H <;> assumption
 
--- thanks to Henrik Böving for his hint with 'generalize'
+-- thanks to Henrik Böving for the hint about 'generalize'
 lemma L_7_5 (b: BExp) (c1 c2: Com) (Hc: equivalent_commands c1 c2):
     equivalent_commands (Com.While b c1) (Com.While b c2) := by
   intros s t; constructor <;> intro H
@@ -186,3 +186,19 @@ lemma L_7_9 (c: Com) (s t1 t2: State): BigStep s c t1 → BigStep s c t2 → t1 
       have H9: s2 = s2' := by
         apply H4; exact H7
       subst H9; assumption
+
+--- Small-Step Semantics
+
+inductive SmallStep: State → Com → State → Com → Prop where
+| Assign: ∀ (x: String) (a: AExp) (s: State),
+    SmallStep s (Com.Assign x a) (update s x (aval a s)) Com.SKIP
+| Seq1: ∀ (c2: Com) (s: State),
+    SmallStep s (Com.Seq Com.SKIP c2) s c2
+| Seq2: ∀ (c1 c1' c2: Com) (s s': State),
+    SmallStep s c1 s' c1' → SmallStep s (Com.Seq c1 c2) s' (Com.Seq c1' c2)
+| IfTrue: ∀ (b: BExp) (s: State) (c1 c2: Com),
+    bval b s → SmallStep s (Com.If b c1 c2) s c1
+| IfFalse: ∀ (b: BExp) (s: State) (c1 c2: Com),
+    (¬ bval b s) → SmallStep s (Com.If b c1 c2) s c2
+| While: ∀ (b: BExp) (s: State) (c: Com),
+    SmallStep s (Com.While b c) s (Com.If b (Com.Seq c (Com.While b c)) Com.SKIP)
