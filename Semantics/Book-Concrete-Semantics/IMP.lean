@@ -142,79 +142,47 @@ lemma L_7_8: Equivalence equivalent_commands := by
 --- IMP is deterministic
 
 lemma L_7_9 (c: Com) (s t1 t2: State): BigStep s c t1 → BigStep s c t2 → t1 = t2 := by
-  intros H1 H2
-  cases H1 with
+  intros H1 H2; revert t2
+  induction H1 with
   | SKIP s' =>
-    cases H2
-    rfl
-  | Assign s' x a =>
-    cases H2
-    rfl
-  | Seq s1 s2 s3 c1 c2 H3 H4 =>
-    cases H2 with | Seq s1 s2' s3 c1 c2 H5 H6 =>
-    have H7: s2 = s2' := by apply L_7_9 _ _ _ _ H3 H5
+    intro t2 H2; cases H2; rfl
+  | Assign s x a =>
+    intro t2 H2; cases H2; rfl
+  | Seq s1 s2 s3 c1 c2 H1 H2 H3 H4 =>
+    intros t2 H5
+    cases H5 with | Seq _ s2' _ _ _ H5 H6 =>
+    have H7: s2 = s2' := by
+      apply H3; assumption
     subst H7
-    apply L_7_9 _ _ _ _ H4 H6
-  | IfTrue s t b c1 c2 H3 H4 =>
-    cases H2 with
-    | IfTrue s' t' b' c1' c2' H5 H6 =>
-      apply L_7_9 _ _ _ _ H4 H6
-    | IfFalse _ _ _ _ _ _ _ =>
+    apply H4 at H6; assumption
+  | IfTrue s' t b c1 c2 H1 H2 H3 =>
+    intros t2 H4
+    cases H4 with
+    | IfTrue s t b c1 c2 H5 H6 =>
+      apply H3; assumption
+    | IfFalse s t b c1 c2 H5 H6 =>
       tauto
-  | IfFalse s t b c1 c2 H3 H4 =>
-    cases H2 with
-    | IfTrue _ _ _ _ _ _ _ =>
+  | IfFalse s' t b c1 c2 H1 H2 H3 =>
+    intros t2 H4
+    cases H4 with
+    | IfTrue s t b c1 c2 H5 H6 =>
       tauto
-    | IfFalse s' t' b' c1' c2' H5 H6 =>
-      apply L_7_9 _ _ _ _ H4 H6
-  | WhileFalse s b c H3 =>
+    | IfFalse s t b c1 c2 H5 H6 =>
+      apply H3; assumption
+  | WhileFalse s' b c' H1 =>
+    intros t2 H2
     cases H2 with
-    | WhileTrue _ _ _ _ _ _ _ =>
-      tauto
-    | WhileFalse s' b' c' H4 =>
+    | WhileFalse s b c H2 =>
       rfl
-  | WhileTrue s1 s2 s3 b c H3 H4 H5 =>
-    cases H2 with
-    | WhileFalse _ _ _ _ =>
+    | WhileTrue s1 s2 s3 b c H2 H3 H4 =>
       tauto
-    | WhileTrue s1' s2' s3' b' c' H6 H7 H8 =>
-      have H9: s2 = s2' := by apply L_7_9 _ _ _ _ H4 H7
-      subst H9
-      apply L_7_9 _ _ _ _ H5 H8
-  decreasing_by
-    · subst c; simp; linarith
-    · subst c; simp
-    · subst c; simp; linarith
-    · subst c; simp
-    · simp [*] --- subst c not working for some reason
-    · sorry --- if seems that goal is impossible to prove or False
-
-lemma L_7_9' (c: Com) (s t1 t2: State): BigStep s c t1 → BigStep s c t2 → t1 = t2 := by
-  revert s t1 t2
-  induction c with
-  | SKIP =>
-    intros s t1 t2 H1 H2; cases H1; cases H2; rfl
-  | Assign v a =>
-    intros s t1 t2 H1 H2; cases H1; cases H2; rfl
-  | Seq c1 c2 H3 H4 =>
-    intros s t1 t2 H1 H2
-    cases H1 with | Seq s1 s2 s3 c1 c2 H5 H6 =>
-    cases H2 with | Seq s1' s2' s3' c1' c2' H7 H8 =>
-    rw [H3 _ _ _ H5 H7] at *
-    apply (H4 _ _ _ H6 H8)
-  | If b c1 c2 H3 H4 =>
-    intros s t1 t2 H1 H2
-    cases H1 with
-    | IfTrue s' t' b' c1' c2' H5 H6 =>
-      cases H2 with
-      | IfTrue s'' t'' b'' c1'' c2'' H7 H8 =>
-        apply (H3 _ _ _ H6 H8)
-      | _ => tauto
-    | IfFalse s' t' b' c1' c2' H5 H6 =>
-      cases H2 with
-      | IfFalse s'' t'' b'' c1'' c2'' H7 H8 =>
-        apply (H4 _ _ _ H6 H8)
-      | _ => tauto
-  | While b c H3 =>
-    intros s t1 t2 H1 H2
-    sorry -- no success here for me :(
+  | WhileTrue s1 s2 s3 b c' H1 H2 H3 H4 H5 =>
+    intros t2 H6
+    cases H6 with
+    | WhileFalse s b c H6 =>
+      tauto
+    | WhileTrue s1 s2' s3 b c H6 H7 H8 =>
+      apply H5
+      have H9: s2 = s2' := by
+        apply H4; exact H7
+      subst H9; assumption
