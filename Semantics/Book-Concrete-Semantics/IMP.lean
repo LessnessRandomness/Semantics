@@ -282,17 +282,13 @@ lemma L_7_12 (s t: State) (c: Com):
     . apply refl_trans_closure.step
       apply SmallStep.IfFalse; assumption
   | WhileTrue s1 s2 s3 b c H1 H2 H3 H4 H5 =>
-    have H6: SmallStep s1 (Com.While b c) s1 (Com.If b (Com.Seq c (Com.While b c)) Com.SKIP) := by
-      constructor
-    have H6' := refl_trans_closure.step H6
-    have H7: SmallStep s1 (Com.If b (Com.Seq c (Com.While b c)) Com.SKIP) s1 (Com.Seq c (Com.While b c)) := by
-      constructor; assumption
-    have H7' := refl_trans_closure.step H7
+    have H6: refl_trans_closure s1 (Com.While b c) s1 (Com.If b (Com.Seq c (Com.While b c)) Com.SKIP) := by
+      apply refl_trans_closure.step; constructor
+    have H7: refl_trans_closure s1 (Com.If b (Com.Seq c (Com.While b c)) Com.SKIP) s1 (Com.Seq c (Com.While b c)) := by
+      apply refl_trans_closure.step; constructor; assumption
     have H8: refl_trans_closure s1 (Com.Seq c (Com.While b c)) s2 (Com.Seq Com.SKIP (Com.While b c)) := by
-      apply L_7_13
-      assumption
-    have H9: SmallStep s2 (Com.Seq Com.SKIP (Com.While b c)) s2 (Com.While b c) := by
-      constructor
-    have H9' := refl_trans_closure.step H9
-    apply refl_trans_closure.trans H6' (refl_trans_closure.trans H7' (refl_trans_closure.trans H8 _))
-    apply refl_trans_closure.trans H9' H5
+      apply L_7_13; assumption
+    have H9: refl_trans_closure s2 (Com.Seq Com.SKIP (Com.While b c)) s2 (Com.While b c) := by
+      apply refl_trans_closure.step; constructor
+    apply refl_trans_closure.trans H6 (refl_trans_closure.trans H7 (refl_trans_closure.trans H8 _))
+    apply refl_trans_closure.trans H9 H5
