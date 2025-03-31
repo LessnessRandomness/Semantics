@@ -292,3 +292,49 @@ lemma L_7_12 (s t: State) (c: Com):
       apply refl_trans_closure.step; constructor
     apply refl_trans_closure.trans H6 (refl_trans_closure.trans H7 (refl_trans_closure.trans H8 _))
     apply refl_trans_closure.trans H9 H5
+
+lemma L_7_15 (s1 s2 t: State) (c1 c2: Com):
+    SmallStep s1 c1 s2 c2 → BigStep s2 c2 t → BigStep s1 c1 t := by
+  intro H; revert t
+  induction H with
+  | Assign x a s =>
+    intro t H1; cases H1; exact BigStep.Assign s x a
+  | Seq1 c2 s =>
+    intro t H1; exact BigStep.Seq s s t Com.SKIP c2 (BigStep.SKIP s) H1
+  | Seq2 c1 c1' c2 s s' H1 H2 =>
+    intro t H1; cases H1; rename_i s2' H3 H4
+    refine BigStep.Seq s s2' t c1 c2 (H2 _ H3) H4
+  | IfTrue b s c1 c2 H1 =>
+    intro t H2; exact BigStep.IfTrue s t b c1 c2 H1 H2
+  | IfFalse b s c1 c2 H1 =>
+    intro t H2; exact BigStep.IfFalse s t b c1 c2 H1 H2
+  | While b s c =>
+    intro t H1; cases H1 with
+    | IfTrue s t b c1 c2 H2 H3 =>
+      cases H3; rename_i s2' H3 H4
+      exact BigStep.WhileTrue s s2' t b c H2 H3 H4
+    | IfFalse s t b c1 c2 H2 H3 =>
+      cases H3; exact BigStep.WhileFalse s b c H2
+
+lemma L_7_14 (s t: State) (c: Com):
+    refl_trans_closure s c t Com.SKIP → BigStep s c t := by
+  intro H
+  generalize hfoo : (Com.SKIP) = foo at H
+  induction H with
+  | step H =>
+    subst hfoo; rename_i s1 s2 c'
+    cases H with
+    | Assign x a s =>
+      exact BigStep.Assign s1 x a
+    | Seq1 c2 s =>
+      exact BigStep.Seq s1 s1 s1 Com.SKIP Com.SKIP (BigStep.SKIP s1) (BigStep.SKIP s1)
+    | IfTrue b s c1 c2 H =>
+      exact BigStep.IfTrue s1 s1 b Com.SKIP c2 H (BigStep.SKIP s1)
+    | IfFalse b s c1 c2 H =>
+      exact BigStep.IfFalse s1 s1 b c1 Com.SKIP H (BigStep.SKIP s1)
+  | refl =>
+    subst hfoo; rename_i s1; exact (BigStep.SKIP s1)
+  | trans H1 H2 H3 H4 =>
+    rename_i s1 s2 s3 c1 c2 c3
+    subst hfoo; simp at *; clear H3
+    sorry
