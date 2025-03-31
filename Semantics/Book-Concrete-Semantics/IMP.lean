@@ -339,3 +339,9 @@ lemma L_7_14 (s t: State) (c: Com):
     rename_i s1 s2 s3 c1 c2 c3 H1 H2
     subst hfoo; simp at H2
     exact L_7_15 s1 s2 s3 c1 c2 H H2
+
+theorem small_step_and_big_step_equivalent (s t: State) (c: Com):
+    refl_trans_closure s c t Com.SKIP ↔ BigStep s c t := by
+  constructor <;> intro H
+  . exact L_7_14 s t c H
+  . exact L_7_12 s t c H
