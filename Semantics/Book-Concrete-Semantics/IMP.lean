@@ -204,15 +204,21 @@ inductive SmallStep: State → Com → State → Com → Prop where
     SmallStep s (Com.While b c) s (Com.If b (Com.Seq c (Com.While b c)) Com.SKIP)
 
 inductive refl_trans_closure: State → Com → State → Com → Prop where
-| step: ∀ {s1 s2: State} {c1 c2: Com},
-    SmallStep s1 c1 s2 c2 →
-    refl_trans_closure s1 c1 s2 c2
 | refl: ∀ {s: State} {c: Com},
     refl_trans_closure s c s c
-| trans: ∀ {s1 s2 s3: State} {c1 c2 c3: Com},
-    refl_trans_closure s1 c1 s2 c2 →
+| step: ∀ {s1 s2 s3: State} {c1 c2 c3: Com},
+    SmallStep s1 c1 s2 c2 →
     refl_trans_closure s2 c2 s3 c3 →
     refl_trans_closure s1 c1 s3 c3
+
+lemma refl_trans_closure_is_transitive {s1 s2 s3 c1 c2 c3}:
+    refl_trans_closure s1 c1 s2 c2 →
+    refl_trans_closure s2 c2 s3 c3 →
+    refl_trans_closure s1 c1 s3 c3 := by
+  intro H1 H2
+  induction H1 with
+  | refl => assumption
+  | step H3 H4 H5 => exact refl_trans_closure.step H3 (H5 H2)
 
 lemma L_7_11 (s s1 s2: State) (c c1 c2: Com):
     SmallStep s c s1 c1 → SmallStep s c s2 c2 → (s1 = s2 ∧ c1 = c2) := by
@@ -243,13 +249,13 @@ lemma L_7_11 (s s1 s2: State) (c c1 c2: Com):
 
 lemma L_7_13 (s1 s2: State) (c c1 c2: Com):
     refl_trans_closure s1 c1 s2 c → refl_trans_closure s1 (Com.Seq c1 c2) s2 (Com.Seq c c2) := by
-  intros H; induction H
-  . apply refl_trans_closure.step
-    apply SmallStep.Seq2
-    assumption
-  . apply refl_trans_closure.refl
-  . rename_i H1 H2 H3 H4
-    apply refl_trans_closure.trans H3 H4
+  intros H; induction H with
+  | refl => exact refl_trans_closure.refl
+  | step H1 H2 H3 =>
+    rename_i s2' s3' c1' c2' c3'
+    apply refl_trans_closure.step
+    . apply (SmallStep.Seq2 _ _ _ _ _ H1)
+    . exact H3
 
 lemma L_7_12 (s t: State) (c: Com):
     BigStep s c t → refl_trans_closure s c t Com.SKIP := by
@@ -258,40 +264,46 @@ lemma L_7_12 (s t: State) (c: Com):
     apply refl_trans_closure.refl
   | Assign s x a =>
     apply refl_trans_closure.step
-    apply SmallStep.Assign
+    . apply SmallStep.Assign
+    . exact refl_trans_closure.refl
   | Seq s1 s2 s3 c1 c2 H1 H2 H3 H4 =>
     apply L_7_13 (c2:=c2) at H3
     have H5: refl_trans_closure s2 (Com.Seq Com.SKIP c2) s2 c2 := by
       apply refl_trans_closure.step
-      constructor
-    apply refl_trans_closure.trans H3 (refl_trans_closure.trans H5 H4)
+      . exact SmallStep.Seq1 c2 s2
+      . exact refl_trans_closure.refl
+    apply refl_trans_closure_is_transitive H3 (refl_trans_closure_is_transitive H5 H4)
   | IfTrue s t b c1 c2 H1 H2 H3 =>
-    apply refl_trans_closure.trans
+    apply refl_trans_closure_is_transitive
     . apply refl_trans_closure.step
-      apply SmallStep.IfTrue _ _ _ _ H1
+      . apply (SmallStep.IfTrue _ _ _ _ H1)
+      . exact refl_trans_closure.refl
     . exact H3
   | IfFalse s t b c1 c2 H1 H2 H3 =>
-    apply refl_trans_closure.trans
+    apply refl_trans_closure_is_transitive
     . apply refl_trans_closure.step
-      apply SmallStep.IfFalse _ _ _ _ H1
+      . apply SmallStep.IfFalse _ _ _ _ H1
+      . exact refl_trans_closure.refl
     . exact H3
   | WhileFalse s b c H1 =>
-    apply refl_trans_closure.trans
+    apply refl_trans_closure_is_transitive
     . apply refl_trans_closure.step
-      apply SmallStep.While
+      . apply SmallStep.While
+      . exact refl_trans_closure.refl
     . apply refl_trans_closure.step
-      apply SmallStep.IfFalse; assumption
+      . apply SmallStep.IfFalse; assumption
+      . exact refl_trans_closure.refl
   | WhileTrue s1 s2 s3 b c H1 H2 H3 H4 H5 =>
     have H6: refl_trans_closure s1 (Com.While b c) s1 (Com.If b (Com.Seq c (Com.While b c)) Com.SKIP) := by
-      apply refl_trans_closure.step; constructor
+      apply refl_trans_closure.step <;> constructor
     have H7: refl_trans_closure s1 (Com.If b (Com.Seq c (Com.While b c)) Com.SKIP) s1 (Com.Seq c (Com.While b c)) := by
-      apply refl_trans_closure.step; constructor; assumption
+      apply refl_trans_closure.step <;> constructor; assumption
     have H8: refl_trans_closure s1 (Com.Seq c (Com.While b c)) s2 (Com.Seq Com.SKIP (Com.While b c)) := by
       apply L_7_13; assumption
     have H9: refl_trans_closure s2 (Com.Seq Com.SKIP (Com.While b c)) s2 (Com.While b c) := by
-      apply refl_trans_closure.step; constructor
-    apply refl_trans_closure.trans H6 (refl_trans_closure.trans H7 (refl_trans_closure.trans H8 _))
-    apply refl_trans_closure.trans H9 H5
+      apply refl_trans_closure.step <;> constructor
+    apply refl_trans_closure_is_transitive H6 (refl_trans_closure_is_transitive H7 ?_)
+    apply refl_trans_closure_is_transitive H8 (refl_trans_closure_is_transitive H9 H5)
 
 lemma L_7_15 (s1 s2 t: State) (c1 c2: Com):
     SmallStep s1 c1 s2 c2 → BigStep s2 c2 t → BigStep s1 c1 t := by
@@ -321,20 +333,9 @@ lemma L_7_14 (s t: State) (c: Com):
   intro H
   generalize hfoo : (Com.SKIP) = foo at H
   induction H with
-  | step H =>
-    subst hfoo; rename_i s1 s2 c'
-    cases H with
-    | Assign x a s =>
-      exact BigStep.Assign s1 x a
-    | Seq1 c2 s =>
-      exact BigStep.Seq s1 s1 s1 Com.SKIP Com.SKIP (BigStep.SKIP s1) (BigStep.SKIP s1)
-    | IfTrue b s c1 c2 H =>
-      exact BigStep.IfTrue s1 s1 b Com.SKIP c2 H (BigStep.SKIP s1)
-    | IfFalse b s c1 c2 H =>
-      exact BigStep.IfFalse s1 s1 b c1 Com.SKIP H (BigStep.SKIP s1)
   | refl =>
-    subst hfoo; rename_i s1; exact (BigStep.SKIP s1)
-  | trans H1 H2 H3 H4 =>
-    rename_i s1 s2 s3 c1 c2 c3
-    subst hfoo; simp at *; clear H3
-    sorry
+    subst hfoo; rename_i s'; exact BigStep.SKIP s'
+  | step H =>
+    rename_i s1 s2 s3 c1 c2 c3 H1 H2
+    subst hfoo; simp at H2
+    exact L_7_15 s1 s2 s3 c1 c2 H H2
